@@ -1,0 +1,56 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:14
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: campaignmanager
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  core-api:
+    build:
+      context: ./core-api
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./core-api:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - DB_HOST=postgres
+      - DB_PORT=5432
+      - DB_USER=postgres
+      - DB_PASSWORD=postgres
+      - DB_NAME=campaignmanager
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  integration-api:
+    build:
+      context: ./integration-api
+      dockerfile: Dockerfile.dev
+    volumes:
+      - ./integration-api:/app
+      - /app/node_modules
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=development
+      - CORE_API_URL=http://core-api:3000
+    depends_on:
+      - core-api
+
+volumes:
+  postgres-data:
