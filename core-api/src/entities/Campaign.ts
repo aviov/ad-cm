@@ -4,33 +4,31 @@ import { Payout } from "./Payout";
 @Entity("campaigns")
 export class Campaign {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ length: 255 })
-  title: string;
+  title!: string;
 
   @Column("text")
-  landingPageUrl: string;
+  landingPageUrl!: string;
 
   @Column({ default: false })
-  isRunning: boolean;
+  isRunning!: boolean;
 
   @OneToMany(() => Payout, payout => payout.campaign, { cascade: true })
-  payouts: Payout[];
+  payouts!: Payout[];
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   constructor() {
-    this.id = 0; // Initialize with a default value
     this.title = "";
     this.landingPageUrl = "";
     this.isRunning = false;
-    this.payouts = [];
-    this.createdAt = new Date();
-    this.updatedAt = new Date();
+    // Do not initialize payouts array - TypeORM will handle it
+    // No need to initialize createdAt/updatedAt - TypeORM handles these
   }
 }

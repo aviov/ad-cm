@@ -5,47 +5,44 @@ import { Country } from "./Country";
 @Entity("payouts")
 export class Payout {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ type: "decimal", precision: 10, scale: 2 })
-  amount: number;
+  amount!: number;
 
   @Column({ type: "decimal", precision: 10, scale: 2, nullable: true })
-  budget: number;
+  budget!: number;
 
   @Column({ default: false })
-  autoStop: boolean;
+  autoStop!: boolean;
 
   @Column({ default: false })
-  budgetAlert: boolean;
+  budgetAlert!: boolean;
 
   @Column({ nullable: true })
-  budgetAlertEmail: string;
+  budgetAlertEmail!: string;
 
   @ManyToOne(() => Campaign, campaign => campaign.payouts, { onDelete: "CASCADE" })
   @JoinColumn({ name: "campaign_id" })
-  campaign: Campaign;
+  campaign!: Campaign;
 
   @ManyToOne(() => Country, country => country.payouts)
   @JoinColumn({ name: "country_id" })
-  country: Country;
+  country!: Country;
 
   @CreateDateColumn()
-  createdAt: Date;
+  createdAt!: Date;
 
   @UpdateDateColumn()
-  updatedAt: Date;
+  updatedAt!: Date;
 
   constructor() {
-    this.id = 0; // Initialize with a default value
     this.amount = 0;
     this.budget = 0;
     this.autoStop = false;
     this.budgetAlert = false;
     this.budgetAlertEmail = "";
-    this.campaign = new Campaign(); // Initialize with a default value
-    this.country = new Country(); // Initialize with a default value
-    this.createdAt = new Date();
-    this.updatedAt = new Date();
+    // Do not initialize campaign and country - TypeORM will handle these relationships
+    // No need to initialize createdAt/updatedAt - TypeORM handles these
   }
 }

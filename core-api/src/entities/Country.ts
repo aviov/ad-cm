@@ -4,21 +4,20 @@ import { Payout } from "./Payout";
 @Entity("countries")
 export class Country {
   @PrimaryGeneratedColumn()
-  id: number;
+  id!: number;
 
   @Column({ length: 2, unique: true })
-  code: string;
+  code!: string;
 
   @Column({ length: 100 })
-  name: string;
+  name!: string;
 
   @OneToMany(() => Payout, payout => payout.country)
-  payouts: Payout[];
+  payouts!: Payout[];
 
   constructor() {
-    this.id = 0; // Initialize with a default value
     this.code = "";
     this.name = "";
-    this.payouts = [];
+    // Do not initialize payouts array - TypeORM will handle it
   }
 }
