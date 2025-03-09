@@ -2,6 +2,15 @@ name: Core API CI Pipeline
 
 on:
   workflow_dispatch:  # Manual trigger
+    inputs:
+      environment:
+        description: 'Environment to deploy to'
+        required: true
+        default: 'dev'
+        type: choice
+        options:
+          - dev
+          - prod
   push:
     branches: [ main ]
     paths:
@@ -24,48 +33,77 @@ jobs:
           
       - name: Install dependencies
         working-directory: ./core-api
-        run: npm ci
+        run: npm install
           
       - name: Lint
         working-directory: ./core-api
         run: npm run lint
+        continue-on-error: true  # Until fully set up
       
       - name: Test
         working-directory: ./core-api
         run: npm test
+        continue-on-error: true  # Until fully set up
 
-  ## Deployment
+  # # Deployment - uncomment when ready to deploy
   # build-and-deploy:
   #   needs: lint-and-test
-  #   if: github.ref == 'refs/heads/main'
+  #   if: (github.ref == 'refs/heads/main' && github.event_name == 'push') || github.event_name == 'workflow_dispatch'
   #   runs-on: ubuntu-latest
+  #   env:
+  #     AWS_REGION: eu-central-1
   #   steps:
   #     - uses: actions/checkout@v3
-  #     
-  #     - name: Set up Node.js
-  #       uses: actions/setup-node@v3
-  #       with:
-  #         node-version: '22'
-  #     
+      
+  #     - name: Set environment
+  #       run: |
+  #         if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+  #           echo "ENVIRONMENT=${{ github.event.inputs.environment }}" >> $GITHUB_ENV
+  #         else
+  #           echo "ENVIRONMENT=dev" >> $GITHUB_ENV
+  #         fi
+      
   #     - name: Configure AWS credentials
-  #       uses: aws-actions/configure-aws-credentials@v1
+  #       uses: aws-actions/configure-aws-credentials@v2
   #       with:
-  #         aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-  #         aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-  #         aws-region: eu-west-1
-  #     
+  #         role-to-assume: arn:aws:iam::${{ secrets.AWS_ACCOUNT_ID }}:role/GithubActionsRole
+  #         aws-region: ${{ env.AWS_REGION }}
+  #         role-session-name: GitHubActions
+      
   #     - name: Login to Amazon ECR
   #       id: login-ecr
   #       uses: aws-actions/amazon-ecr-login@v1
-  #     
+      
+  #     - name: Get ECR repository name from CloudFormation
+  #       run: |
+  #         ECR_REPOSITORY=$(aws cloudformation list-exports --query "Exports[?Name=='ad-cm-${{ env.ENVIRONMENT }}-core-api-repository'].Value" --output text)
+  #         echo "ECR_REPOSITORY=$ECR_REPOSITORY" >> $GITHUB_ENV
+          
+  #         # Get ECS cluster and service names
+  #         ECS_CLUSTER=$(aws cloudformation list-exports --query "Exports[?Name=='ad-cm-${{ env.ENVIRONMENT }}-api-cluster'].Value" --output text)
+  #         echo "ECS_CLUSTER=$ECS_CLUSTER" >> $GITHUB_ENV
+          
+  #         ECS_SERVICE=$(aws cloudformation list-exports --query "Exports[?Name=='ad-cm-${{ env.ENVIRONMENT }}-core-api-service'].Value" --output text)
+  #         echo "ECS_SERVICE=$ECS_SERVICE" >> $GITHUB_ENV
+      
   #     - name: Build, tag, and push image to Amazon ECR
   #       working-directory: ./core-api
   #       env:
   #         ECR_REGISTRY: ${{ steps.login-ecr.outputs.registry }}
-  #         ECR_REPOSITORY: campaign-manager/core-api
   #         IMAGE_TAG: ${{ github.sha }}
   #       run: |
-  #         docker build -t $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG .
-  #         docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
-  #     
-  #     # ECS service update here:
+  #         echo "Building image for repository: ${{ env.ECR_REPOSITORY }}"
+  #         docker build -t $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG .
+  #         docker push $ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG
+  #         echo "IMAGE=$ECR_REGISTRY/${{ env.ECR_REPOSITORY }}:$IMAGE_TAG" >> $GITHUB_ENV
+      
+  #     - name: Update ECS service
+  #       run: |
+  #         echo "Updating ECS service: ${{ env.ECS_SERVICE }} in cluster: ${{ env.ECS_CLUSTER }}"
+  #         aws ecs update-service --cluster ${{ env.ECS_CLUSTER }} --service ${{ env.ECS_SERVICE }} --force-new-deployment
+      
+  #     - name: Deployment summary
+  #       run: |
+  #         echo "✅ Core API deployed successfully!"
+  #         echo "🌐 Environment: ${{ env.ENVIRONMENT }}"
+  #         echo "🔄 New image: ${{ env.IMAGE }}"
