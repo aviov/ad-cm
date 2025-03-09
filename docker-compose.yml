@@ -1,4 +1,4 @@
-version: '3.8'
+# version: '3.8'
 
 services:
   postgres:
@@ -6,7 +6,7 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: campaignmanager
+      POSTGRES_DB: ad-cm
     ports:
       - "5432:5432"
     volumes:
@@ -32,7 +32,7 @@ services:
       - DB_PORT=5432
       - DB_USER=postgres
       - DB_PASSWORD=postgres
-      - DB_NAME=campaignmanager
+      - DB_NAME=ad-cm
     depends_on:
       postgres:
         condition: service_healthy
