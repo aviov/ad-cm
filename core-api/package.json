@@ -1,0 +1,26 @@
+{
+  "name": "core-api",
+  "version": "1.0.0",
+  "description": "express server for campaign mamagement web application",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aviov/ad-cm.git"
+  },
+  "keywords": [
+    "api",
+    "backend"
+  ],
+  "author": "Juri.L",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aviov/ad-cm/issues"
+  },
+  "homepage": "https://github.com/aviov/ad-cm#readme",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

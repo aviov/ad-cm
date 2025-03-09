@@ -1,0 +1,28 @@
+{
+  "name": "integration-api",
+  "version": "1.0.0",
+  "description": "API to connect to ad networks",
+  "main": "index.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/aviov/ad-cm.git"
+  },
+  "keywords": [
+    "api",
+    "integration",
+    "ad",
+    "networks"
+  ],
+  "author": "Juri.L",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/aviov/ad-cm/issues"
+  },
+  "homepage": "https://github.com/aviov/ad-cm#readme",
+  "dependencies": {
+    "express": "^4.21.2"
+  }
+}

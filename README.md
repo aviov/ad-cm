@@ -29,6 +29,11 @@ This application allows advertisers to:
 2. Run `docker-compose up` to start the development environment
 3. Navigate to client directory and run `npm install` and `npm run dev`
 
+### Deployment
+1. Use the client.yml workflow to deploy the frontend
+2. Use the core-api.yml workflow to deploy the backend
+3. Use the integration-api.yml workflow to deploy the integrations service
+
 ## Team
 
 Marketing Technology Team @ Advertising
