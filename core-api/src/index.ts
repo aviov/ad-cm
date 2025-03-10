@@ -4,9 +4,16 @@ import cors from "cors";
 import helmet from "helmet";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { errorMiddleware, notFoundMiddleware } from './middleware/error.middleware';
+import {
+  errorMiddleware,
+  notFoundMiddleware
+} from './middleware/error.middleware';
 import { AppDataSource } from "./database/data-source";
-import { campaignRoutes, payoutRoutes } from "./routes/index";
+import {
+  campaignRoutes,
+  payoutRoutes,
+  countryRoutes
+} from "./routes/index";
 import statusRoutes from "./routes/status.routes";
 
 // Load environment variables
@@ -25,6 +32,7 @@ app.use(express.json());
 // Routes
 app.use("/api/campaigns", campaignRoutes);
 app.use("/api/payouts", payoutRoutes);
+app.use("/api/countries", countryRoutes);
 
 app.use("/api", statusRoutes);
 
