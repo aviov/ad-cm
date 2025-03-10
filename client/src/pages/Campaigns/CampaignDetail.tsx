@@ -1,4 +1,3 @@
-// src/pages/Campaigns/CampaignDetail.tsx
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from 'react-query';

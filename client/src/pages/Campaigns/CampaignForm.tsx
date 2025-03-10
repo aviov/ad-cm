@@ -68,7 +68,7 @@ const initialValues: CampaignFormData = {
   isRunning: false,
   payouts: [
     {
-      countryId: 0,
+      countryId: undefined as unknown as number,
       amount: 0,
       budget: null,
       autoStop: false,
@@ -284,6 +284,7 @@ const CampaignForm: React.FC = () => {
                                     name={`payouts.${index}.countryId`}
                                     placeholder="Select country"
                                   >
+                                    <option value="">Select country</option>
                                     {countries?.map((country: Country) => (
                                       <option key={country.id} value={country.id}>
                                         {country.name} ({country.code})
@@ -307,8 +308,9 @@ const CampaignForm: React.FC = () => {
                                         min={0}
                                         precision={2}
                                         step={0.01}
+                                        value={field.value === null || field.value === undefined ? '' : field.value}
                                         onChange={(valueString) => {
-                                          form.setFieldValue(field.name, parseFloat(valueString));
+                                          form.setFieldValue(field.name, parseFloat(valueString) || 0);
                                         }}
                                       >
                                         <NumberInputField placeholder="0.00" />
@@ -332,6 +334,7 @@ const CampaignForm: React.FC = () => {
                                         min={0}
                                         precision={2}
                                         step={0.01}
+                                        value={field.value === null || field.value === undefined ? '' : field.value}
                                         onChange={(valueString) => {
                                           form.setFieldValue(
                                             field.name,
