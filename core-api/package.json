@@ -25,7 +25,11 @@
     "migration:generate": "npm run typeorm -- migration:generate -d src/database/data-source.ts",
     "migration:run": "npm run typeorm -- migration:run -d src/database/data-source.ts",
     "migration:revert": "npm run typeorm -- migration:revert -d src/database/data-source.ts",
-    "seed": "ts-node src/database/seeds/index.ts"
+    "migration:generate:docker": "docker exec -it ad-cm-core-api-1 npm run migration:generate",
+    "migration:run:docker": "docker exec -it ad-cm-core-api-1 npm run migration:run",
+    "migration:revert:docker": "docker exec -it ad-cm-core-api-1 npm run migration:revert",
+    "seed": "ts-node src/database/seeds/index.ts",
+    "seed:docker": "docker exec -it ad-cm-core-api-1 npm run seed"
   },
   "homepage": "https://github.com/aviov/ad-cm#readme",
   "dependencies": {
