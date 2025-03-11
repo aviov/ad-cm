@@ -26,6 +26,10 @@ export class Payout {
   @JoinColumn({ name: "campaign_id" })
   campaign!: Campaign;
 
+  // Explicit column for the foreign key
+  @Column({ name: "country_id", nullable: true })
+  countryId!: number;
+
   @ManyToOne(() => Country, country => country.payouts)
   @JoinColumn({ name: "country_id" })
   country!: Country;
