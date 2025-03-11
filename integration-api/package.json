@@ -2,8 +2,12 @@
   "name": "integration-api",
   "version": "1.0.0",
   "description": "API to connect to ad networks",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "dev": "ts-node src/index.ts",
+    "docker:dev": "npm install --include=dev && ts-node src/index.ts",
     "test": "jest"
   },
   "repository": {
@@ -24,5 +28,12 @@
   "homepage": "https://github.com/aviov/ad-cm#readme",
   "dependencies": {
     "express": "^4.21.2"
+  },
+  "devDependencies": {
+    "@types/express": "^4.17.17",
+    "@types/node": "^20.12.6",
+    "nodemon": "^3.1.9",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3"
   }
 }
