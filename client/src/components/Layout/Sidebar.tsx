@@ -18,9 +18,11 @@ interface NavItemProps {
 }
 
 const NavItem: React.FC<NavItemProps> = ({ icon, to, children, exact }) => {
-  const activeBg = useColorModeValue('brand.50', 'brand.900');
-  const activeColor = useColorModeValue('brand.700', 'brand.200');
+  const activeBg = useColorModeValue('brand.50', 'gray.700');
+  const activeColor = useColorModeValue('brand.700', 'cyan.500');
+  const textColor = useColorModeValue('gray.600', 'gray.300');
   const hoverBg = useColorModeValue('gray.100', 'gray.700');
+  const hoverColor = useColorModeValue('brand.600', 'cyan.400');
 
   return (
     <NavLink 
@@ -37,9 +39,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon, to, children, exact }) => {
           role="group"
           cursor="pointer"
           bg={isActive ? activeBg : 'transparent'}
-          color={isActive ? activeColor : 'gray.600'}
-          _hover={{ bg: !isActive ? hoverBg : activeBg }}
+          color={isActive ? activeColor : textColor}
+          _hover={{ 
+            bg: !isActive ? hoverBg : activeBg,
+            color: !isActive ? hoverColor : activeColor
+          }}
           fontWeight={isActive ? "bold" : "normal"}
+          transition="all 0.2s"
         >
           <Icon
             mr="3"
@@ -54,16 +60,13 @@ const NavItem: React.FC<NavItemProps> = ({ icon, to, children, exact }) => {
 };
 
 const Sidebar: React.FC = () => {
-  const bgColor = useColorModeValue('white', 'gray.800');
-  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const bgColor = useColorModeValue('white', 'gray.900');
 
   return (
     <Box
       as="aside"
       w="64"
       bg={bgColor}
-      borderRight="1px"
-      borderColor={borderColor}
       h="full"
       overflowY="auto"
       display={{ base: 'none', md: 'block' }}

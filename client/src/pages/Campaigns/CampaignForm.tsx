@@ -30,10 +30,13 @@ import {
   Spinner,
   useToast,
   Text,
+  Flex,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
 import { campaignApi, countryApi } from '../../services/api';
 import { CampaignFormData, Country } from '../../types';
+// import { formatNumber, formatEUR } from '../../utils/formatters';
 
 // Validation schema for the campaign form
 const CampaignSchema = Yup.object().shape({
@@ -44,12 +47,12 @@ const CampaignSchema = Yup.object().shape({
       Yup.object().shape({
         countryId: Yup.number().required('Country is required'),
         amount: Yup.number()
-          .positive('Amount must be positive')
+          .typeError('Amount must be a number')
           .required('Amount is required'),
         budget: Yup.number()
           .nullable()
-          .transform((value) => (isNaN(value) ? null : value))
-          .positive('Budget must be positive'),
+          .typeError('Budget must be a number')
+          .transform((value) => (isNaN(value) ? null : value)),
         budgetAlertEmail: Yup.string()
           .email('Must be a valid email')
           .when('budgetAlert', {
@@ -86,6 +89,19 @@ const CampaignForm: React.FC = () => {
   const isEditMode = Boolean(id);
   const [formValues, setFormValues] = useState<CampaignFormData>(initialValues);
 
+  // Color mode values
+  const outlineBtnBorderColor = useColorModeValue('brand.500', 'white');
+  const outlineBtnColor = useColorModeValue('brand.500', 'white');
+  const outlineBtnHoverBg = useColorModeValue('brand.50', 'rgba(255, 255, 255, 0.1)');
+  const outlineBtnHoverBorderColor = useColorModeValue('brand.600', 'white');
+  const outlineBtnHoverColor = useColorModeValue('brand.600', 'white');
+  
+  const cancelBtnBorderColor = useColorModeValue('gray.200', 'white');
+  const cancelBtnColor = useColorModeValue('gray.700', 'white');
+  const cancelBtnHoverBg = useColorModeValue('gray.50', 'rgba(255, 255, 255, 0.1)');
+  const cancelBtnHoverBorderColor = useColorModeValue('gray.300', 'white');
+  const cancelBtnHoverColor = useColorModeValue('gray.800', 'white');
+
   // Fetch countries for dropdown
   const { data: countries, isLoading: isLoadingCountries } = useQuery(
     'countries',
@@ -106,14 +122,15 @@ const CampaignForm: React.FC = () => {
         const formData: CampaignFormData = {
           title: data.title,
           landingPageUrl: data.landingPageUrl,
-          isRunning: data.isRunning,
+          isRunning: Boolean(data.isRunning), // Explicit boolean conversion
           payouts: data.payouts.map((payout) => ({
             id: payout.id,
-            countryId: payout.country?.id || 0,
+            // Use the explicit countryId property now available from the backend
+            countryId: payout.countryId || payout.country?.id || 0,
             amount: payout.amount,
             budget: payout.budget,
-            autoStop: payout.autoStop,
-            budgetAlert: payout.budgetAlert,
+            autoStop: Boolean(payout.autoStop), // Explicit boolean conversion
+            budgetAlert: Boolean(payout.budgetAlert), // Explicit boolean conversion
             budgetAlertEmail: payout.budgetAlertEmail || '',
           })),
         };
@@ -241,12 +258,18 @@ const CampaignForm: React.FC = () => {
                 <FormLabel htmlFor="isRunning" mb="0">
                   Campaign Status
                 </FormLabel>
-                <Field
-                  as={Switch}
-                  id="isRunning"
-                  name="isRunning"
-                  colorScheme="green"
-                />
+                <Field name="isRunning">
+                  {({ field, form }: FieldProps) => (
+                    <Switch
+                      id="isRunning"
+                      isChecked={field.value === true}
+                      colorScheme="green"
+                      onChange={(e) => {
+                        form.setFieldValue("isRunning", e.target.checked);
+                      }}
+                    />
+                  )}
+                </Field>
                 <Text ml={2}>
                   {values.isRunning ? 'Active' : 'Inactive'}
                 </Text>
@@ -266,7 +289,7 @@ const CampaignForm: React.FC = () => {
                             <Th>Country</Th>
                             <Th>Amount</Th>
                             <Th>Budget</Th>
-                            <Th>Auto Stop</Th>
+                            {/* <Th>Auto Stop</Th> */}
                             <Th>Budget Alert</Th>
                             <Th>Actions</Th>
                           </Tr>
@@ -282,9 +305,7 @@ const CampaignForm: React.FC = () => {
                                   <Field
                                     as={Select}
                                     name={`payouts.${index}.countryId`}
-                                    placeholder="Select country"
                                   >
-                                    <option value="">Select country</option>
                                     {countries?.map((country: Country) => (
                                       <option key={country.id} value={country.id}>
                                         {country.name} ({country.code})
@@ -305,12 +326,16 @@ const CampaignForm: React.FC = () => {
                                     {({ field, form }: FieldProps) => (
                                       <NumberInput
                                         {...field}
+                                        isValidCharacter={(val) => /^[0-9.-]$/.test(val)} 
                                         min={0}
                                         precision={2}
-                                        step={0.01}
+                                        step={1}
+                                        allowMouseWheel={false}
                                         value={field.value === null || field.value === undefined ? '' : field.value}
                                         onChange={(valueString) => {
-                                          form.setFieldValue(field.name, parseFloat(valueString) || 0);
+                                          // Remove any non-numeric characters except decimal point
+                                          valueString = valueString.replace(/[^0-9.]/g, '');
+                                          form.setFieldValue(field.name, valueString === '' ? 0 : Number(valueString));
                                         }}
                                       >
                                         <NumberInputField placeholder="0.00" />
@@ -331,14 +356,18 @@ const CampaignForm: React.FC = () => {
                                     {({ field, form }: FieldProps) => (
                                       <NumberInput
                                         {...field}
+                                        isValidCharacter={(val) => /^[0-9.-]$/.test(val)}
                                         min={0}
                                         precision={2}
-                                        step={0.01}
+                                        step={1}
+                                        allowMouseWheel={false}
                                         value={field.value === null || field.value === undefined ? '' : field.value}
                                         onChange={(valueString) => {
+                                          // Remove any non-numeric characters except decimal point
+                                          valueString = valueString.replace(/[^0-9.]/g, '');
                                           form.setFieldValue(
                                             field.name,
-                                            valueString === '' ? null : parseFloat(valueString)
+                                            valueString === '' ? null : Number(valueString)
                                           );
                                         }}
                                       >
@@ -351,14 +380,14 @@ const CampaignForm: React.FC = () => {
                                   </FormErrorMessage>
                                 </FormControl>
                               </Td>
-                              <Td>
+                              {/* <Td>
                                 <Field
                                   as={Switch}
                                   name={`payouts.${index}.autoStop`}
                                   colorScheme="red"
                                 />
-                              </Td>
-                              <Td>
+                              </Td> */}
+                              {/* <Td>
                                 <VStack align="start" spacing={2}>
                                   <Field
                                     as={Switch}
@@ -382,6 +411,50 @@ const CampaignForm: React.FC = () => {
                                     </FormControl>
                                   )}
                                 </VStack>
+                              </Td> */}
+                              <Td>
+                                <Flex direction="row" alignItems="center" height="90px" width="100%" gap={3}>
+                                  {/* Toggle switch */}
+                                  <Box>
+                                    <Field name={`payouts.${index}.budgetAlert`}>
+                                      {({ field, form }: FieldProps) => (
+                                        <Switch
+                                          id={`payouts.${index}.budgetAlert`}
+                                          isChecked={field.value === true}
+                                          colorScheme="orange"
+                                          onChange={(e) => {
+                                            form.setFieldValue(`payouts.${index}.budgetAlert`, e.target.checked);
+                                            // If toggled off, clear the email field
+                                            if (!e.target.checked) {
+                                              form.setFieldValue(`payouts.${index}.budgetAlertEmail`, '');
+                                            }
+                                          }}
+                                        />
+                                      )}
+                                    </Field>
+                                  </Box>
+                                  
+                                  {/* Email input field */}
+                                  {/*values.payouts[index].budgetAlert && */ (
+                                    <FormControl 
+                                      isInvalid={
+                                        !!(errors.payouts?.[index] as any)?.budgetAlertEmail && 
+                                        (touched.payouts?.[index] as any)?.budgetAlertEmail
+                                      }
+                                      flex="1"
+                                    >
+                                      <Field
+                                        as={Input}
+                                        name={`payouts.${index}.budgetAlertEmail`}
+                                        placeholder="Email for alerts"
+                                        size="sm"
+                                      />
+                                      <FormErrorMessage mt={1} fontSize="xs">
+                                        {(errors.payouts?.[index] as any)?.budgetAlertEmail}
+                                      </FormErrorMessage>
+                                    </FormControl>
+                                  )}
+                                </Flex>
                               </Td>
                               <Td>
                                 <IconButton
@@ -413,6 +486,13 @@ const CampaignForm: React.FC = () => {
                           })
                         }
                         mb={8}
+                        borderColor={outlineBtnBorderColor}
+                        color={outlineBtnColor}
+                        _hover={{
+                          bg: outlineBtnHoverBg,
+                          borderColor: outlineBtnHoverBorderColor,
+                          color: outlineBtnHoverColor
+                        }}
                       >
                         Add Payout
                       </Button>
@@ -427,6 +507,13 @@ const CampaignForm: React.FC = () => {
                 <Button
                   variant="outline"
                   onClick={() => navigate('/campaigns')}
+                  borderColor={cancelBtnBorderColor}
+                  color={cancelBtnColor}
+                  _hover={{
+                    bg: cancelBtnHoverBg,
+                    borderColor: cancelBtnHoverBorderColor,
+                    color: cancelBtnHoverColor
+                  }}
                 >
                   Cancel
                 </Button>

@@ -35,10 +35,12 @@ import {
   ModalFooter,
   ModalBody,
   ModalCloseButton,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { ExternalLinkIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons';
 import { campaignApi } from '../../services/api';
 import { formatDistance } from 'date-fns';
+import { formatNumber, formatEUR } from '../../utils/formatters';
 
 const CampaignDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
@@ -46,6 +48,31 @@ const CampaignDetail: React.FC = () => {
   const toast = useToast();
   const queryClient = useQueryClient();
   const { isOpen, onOpen, onClose } = useDisclosure();
+
+  // Color mode values
+  const stopBtnHoverBg = useColorModeValue('red.600', 'red.500');
+  const startBtnHoverBg = useColorModeValue('green.600', 'green.500');
+  const editBtnHoverBg = useColorModeValue('cyan.600', 'cyan.400');
+  const deleteBtnBorderColor = useColorModeValue('red.500', 'red.300');
+  const deleteBtnColor = useColorModeValue('red.600', 'red.300');
+  const deleteBtnHoverBg = useColorModeValue('red.50', 'rgba(254, 178, 178, 0.12)');
+  const deleteBtnHoverBorderColor = useColorModeValue('red.600', 'red.200');
+  const deleteBtnHoverColor = useColorModeValue('red.700', 'red.200');
+  const statLabelColor = useColorModeValue('gray.600', 'gray.200');
+  const statNumberColor = useColorModeValue('gray.800', 'white');
+  const statHelpTextColor = useColorModeValue('gray.600', 'gray.300');
+  const statBgColor = useColorModeValue('white', 'gray.800');
+  const statBorderColor = useColorModeValue('gray.200', 'gray.700');
+  const activeBadgeColor = useColorModeValue('green.100', 'green.500');
+  const activeBadgeTextColor = useColorModeValue('green.800', 'white');
+  const inactiveBadgeColor = useColorModeValue('gray.100', 'gray.600');
+  const inactiveBadgeTextColor = useColorModeValue('gray.800', 'gray.200');
+  const activeStatBgColor = useColorModeValue('green.50', 'green.900');
+  const activeStatBorderColor = useColorModeValue('green.200', 'green.700');
+  const activeStatHelpTextColor = useColorModeValue('green.700', 'green.200');
+  const inactiveStatBgColor = useColorModeValue('gray.50', 'gray.700');
+  const inactiveStatBorderColor = useColorModeValue('gray.200', 'gray.600');
+  const inactiveStatHelpTextColor = useColorModeValue('gray.600', 'gray.300');
 
   // Fetch campaign details
   const { data: campaign, isLoading, isError } = useQuery(
@@ -131,7 +158,11 @@ const CampaignDetail: React.FC = () => {
 
   // Calculate totals
   const totalPayouts = campaign.payouts.length;
-  const totalBudget = campaign.payouts.reduce((sum, payout) => sum + (payout.budget || 0), 0);
+  const totalBudget = campaign.payouts.reduce((sum, payout) => {
+    // Convert string budget to number or use 0 if null/undefined
+    const budget = payout.budget ? Number(payout.budget) : 0;
+    return sum + budget;
+  }, 0);
 
   return (
     <Box>
@@ -147,12 +178,24 @@ const CampaignDetail: React.FC = () => {
             colorScheme={campaign.isRunning ? 'red' : 'green'}
             onClick={handleToggleStatus}
             isLoading={toggleMutation.isLoading}
+            _hover={{ 
+              bg: campaign.isRunning ? stopBtnHoverBg : startBtnHoverBg
+            }}
+            color="black"
+            fontWeight="bold"
           >
             {campaign.isRunning ? 'Stop Campaign' : 'Start Campaign'}
           </Button>
           <Button
-            leftIcon={<EditIcon />}
+            leftIcon={<EditIcon color="black" />}
             onClick={() => navigate(`/campaigns/${id}/edit`)}
+            colorScheme="cyan"
+            color="black"
+            fontWeight="bold"
+            _hover={{ 
+              bg: editBtnHoverBg,
+              color: "black"
+            }}
           >
             Edit
           </Button>
@@ -161,6 +204,13 @@ const CampaignDetail: React.FC = () => {
             colorScheme="red"
             variant="outline"
             onClick={onOpen}
+            borderColor={deleteBtnBorderColor}
+            color={deleteBtnColor}
+            _hover={{
+              bg: deleteBtnHoverBg,
+              borderColor: deleteBtnHoverBorderColor,
+              color: deleteBtnHoverColor
+            }}
           >
             Delete
           </Button>
@@ -170,36 +220,107 @@ const CampaignDetail: React.FC = () => {
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={8}>
         <Stat
           p={5}
-          shadow="md"
+          shadow="sm"
           borderWidth="1px"
           borderRadius="md"
-          backgroundColor={campaign.isRunning ? 'green.50' : 'gray.50'}
+          backgroundColor={campaign.isRunning ? activeStatBgColor : inactiveStatBgColor}
+          borderColor={campaign.isRunning ? activeStatBorderColor : inactiveStatBorderColor}
         >
-          <StatLabel>Status</StatLabel>
+          <StatLabel color={statLabelColor}>Status</StatLabel>
           <StatNumber>
-            <Badge colorScheme={campaign.isRunning ? 'green' : 'gray'} fontSize="md" p={1}>
-              {campaign.isRunning ? 'Active' : 'Inactive'}
+            <Badge 
+              colorScheme={campaign.isRunning ? 'green' : 'gray'} 
+              fontSize="md" 
+              p={1}
+              color={campaign.isRunning ? activeBadgeTextColor : inactiveBadgeTextColor}
+              bg={campaign.isRunning ? activeBadgeColor : inactiveBadgeColor}
+            >
+              {campaign.isRunning ? 'ACTIVE' : 'INACTIVE'}
             </Badge>
           </StatNumber>
-          <StatHelpText>
+          <StatHelpText 
+            color={campaign.isRunning ? activeStatHelpTextColor : inactiveStatHelpTextColor}
+            fontWeight="medium"
+          >
             {campaign.isRunning
               ? 'Campaign is currently running'
               : 'Campaign is currently paused'}
           </StatHelpText>
         </Stat>
 
-        <Stat p={5} shadow="md" borderWidth="1px" borderRadius="md">
-          <StatLabel>Total Payouts</StatLabel>
-          <StatNumber>{totalPayouts}</StatNumber>
-          <StatHelpText>Countries with active payouts</StatHelpText>
+        <Stat 
+          p={5} 
+          shadow="sm" 
+          borderWidth="1px" 
+          borderRadius="md"
+          bg={statBgColor}
+          borderColor={statBorderColor}
+        >
+          <StatLabel color={statLabelColor}>Total Payouts</StatLabel>
+          <StatNumber color={statNumberColor}>{formatNumber(totalPayouts)}</StatNumber>
+          <StatHelpText color={statHelpTextColor}>Countries with active payouts</StatHelpText>
         </Stat>
 
-        <Stat p={5} shadow="md" borderWidth="1px" borderRadius="md">
-          <StatLabel>Total Budget</StatLabel>
-          <StatNumber>${totalBudget.toFixed(2)}</StatNumber>
-          <StatHelpText>Combined from all payouts</StatHelpText>
+        <Stat 
+          p={5} 
+          shadow="sm" 
+          borderWidth="1px" 
+          borderRadius="md"
+          bg={statBgColor}
+          borderColor={statBorderColor}
+        >
+          <StatLabel color={statLabelColor}>Total Budget</StatLabel>
+          <StatNumber color={statNumberColor}>{formatEUR(totalBudget)}</StatNumber>
+          <StatHelpText color={statHelpTextColor}>Combined from all payouts</StatHelpText>
         </Stat>
       </SimpleGrid>
+
+      <Box>
+        <Heading size="md" mb={4}>
+          Payouts by Country
+        </Heading>
+        <Table variant="simple">
+          <Thead>
+            <Tr>
+              <Th color={statLabelColor}>Country</Th>
+              <Th color={statLabelColor}>Amount</Th>
+              <Th color={statLabelColor}>Budget</Th>
+              <Th color={statLabelColor}>Budget Alert</Th>
+            </Tr>
+          </Thead>
+          <Tbody>
+            {campaign.payouts.map((payout) => (
+              <Tr key={payout.id}>
+                <Td color={statNumberColor}>
+                  {payout.country ? (
+                    <Text>
+                      {payout.country.name} ({payout.country.code})
+                    </Text>
+                  ) : (
+                    <Text color="red.500">Unknown Country</Text>
+                  )}
+                </Td>
+                <Td color={statNumberColor}>
+                  {formatEUR(payout.amount)}
+                </Td>
+                <Td color={statNumberColor}>
+                  {formatEUR(payout.budget)}
+                </Td>
+                <Td>
+                  <Badge
+                    colorScheme={payout.budgetAlert ? 'green' : 'gray'}
+                    variant={useColorModeValue('subtle', 'solid')}
+                  >
+                    {payout.budgetAlert ? 'ENABLED' : 'DISABLED'}
+                  </Badge>
+                </Td>
+              </Tr>
+            ))}
+          </Tbody>
+        </Table>
+      </Box>
+
+      <Divider my={6} />
 
       <Box mb={8}>
         <Heading size="md" mb={4}>
@@ -221,59 +342,6 @@ const CampaignDetail: React.FC = () => {
                 {formatDistance(new Date(campaign.updatedAt), new Date(), { addSuffix: true })})
               </Td>
             </Tr>
-          </Tbody>
-        </Table>
-      </Box>
-
-      <Divider my={6} />
-
-      <Box>
-        <Heading size="md" mb={4}>
-          Payouts by Country
-        </Heading>
-        <Table variant="simple">
-          <Thead>
-            <Tr>
-              <Th>Country</Th>
-              <Th>Amount</Th>
-              <Th>Budget</Th>
-              <Th>Auto Stop</Th>
-              <Th>Budget Alert</Th>
-            </Tr>
-          </Thead>
-          <Tbody>
-            {campaign.payouts.map((payout) => (
-              <Tr key={payout.id}>
-                <Td>
-                  {payout.country ? (
-                    <Text>
-                      {payout.country.name} ({payout.country.code})
-                    </Text>
-                  ) : (
-                    <Text color="red.500">Unknown Country</Text>
-                  )}
-                </Td>
-                <Td>${payout.amount.toFixed(2)}</Td>
-                <Td>{payout.budget ? `$${payout.budget.toFixed(2)}` : '-'}</Td>
-                <Td>
-                  <Badge colorScheme={payout.autoStop ? 'red' : 'gray'}>
-                    {payout.autoStop ? 'Enabled' : 'Disabled'}
-                  </Badge>
-                </Td>
-                <Td>
-                  <VStack align="start" spacing={0}>
-                    <Badge colorScheme={payout.budgetAlert ? 'orange' : 'gray'}>
-                      {payout.budgetAlert ? 'Enabled' : 'Disabled'}
-                    </Badge>
-                    {payout.budgetAlert && payout.budgetAlertEmail && (
-                      <Text fontSize="xs" color="gray.600">
-                        {payout.budgetAlertEmail}
-                      </Text>
-                    )}
-                  </VStack>
-                </Td>
-              </Tr>
-            ))}
           </Tbody>
         </Table>
       </Box>
