@@ -198,20 +198,19 @@ export class ApiStack extends cdk.Stack {
       },
       secrets: {
         // Extract username and password from the secrets manager
-        DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'username'),
+        DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'postgres_admin'),
         DB_PASSWORD: ecs.Secret.fromSecretsManager(props.dbCredentials, 'password'),
       },
       healthCheck: {
-        // Use Node.js to perform the health check instead of curl
         command: [
           'CMD-SHELL', 
-          'node -e "const http = require(\'http\'); const options = { hostname: \'localhost\', port: 3000, path: \'/health\', method: \'GET\' }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on(\'error\', () => { process.exit(1); }); req.end();"'
+          'node -e "const http = require(\'http\'); const options = { hostname: \'localhost\', port: 3000, path: \'/health\', method: \'GET\', timeout: 5000 }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on(\'error\', () => { process.exit(1); }); req.setTimeout(5000, () => { process.exit(1); }); req.end();"'
         ],
-        interval: cdk.Duration.seconds(30),  // Check every 30 seconds
-        timeout: cdk.Duration.seconds(10),   // Allow 10 seconds for the check
-        retries: 5,                         // Allow 5 failures before marking unhealthy
-        startPeriod: cdk.Duration.seconds(60) // Give container 60s to start before health checks count
-      },
+        interval: cdk.Duration.seconds(30),
+        timeout: cdk.Duration.seconds(10),
+        retries: 5,
+        startPeriod: cdk.Duration.seconds(120) // Longer startup period to allow database connection
+      }
     });
 
     coreApiContainer.addPortMappings({
@@ -237,7 +236,7 @@ export class ApiStack extends cdk.Stack {
           DB_PORT: '5432',
         },
         secrets: {
-          DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'username'),
+          DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'postgres_admin'),
           DB_PASSWORD: ecs.Secret.fromSecretsManager(props.dbCredentials, 'password'),
         },
         healthCheck: {

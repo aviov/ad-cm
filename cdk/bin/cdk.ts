@@ -88,10 +88,14 @@ const apiStack = new ApiStack(app, `${appName}-${config.environment}-api`, {
   },
 });
 
+// Use the actual ALB endpoint that we know is working
+// This avoids cross-stack reference issues with CloudFormation
+const actualApiEndpoint = `http://ad-cm-dev-alb-1169756354.eu-central-1.elb.amazonaws.com:8080`;
+
 const frontendStack = new FrontendStack(app, `${appName}-${config.environment}-frontend`, {
   appName,
   environment: config.environment,
-  apiEndpoint: apiStack.apiEndpoint,
+  apiEndpoint: actualApiEndpoint, // Use the hardcoded endpoint
   env,
   description: `Frontend infrastructure for ${appName} ${config.environment} environment`,
   tags: {
