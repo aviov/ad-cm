@@ -25,6 +25,7 @@ describe('DbStack', () => {
       environment: 'dev',
       vpc: networkStack.vpc,
       databaseSecurityGroup: networkStack.databaseSecurityGroup,
+      apiSecurityGroup: networkStack.apiSecurityGroup,
       env: { account: '123456789012', region: 'eu-central-1' },
     });
     

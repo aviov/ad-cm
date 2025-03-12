@@ -83,7 +83,12 @@ The most valuable features and data structure is described by entities Campaign,
 1. Use the client.yml workflow to deploy the frontend
 2. Use the core-api.yml workflow to deploy the backend
 3. Use the integration-api.yml workflow to deploy the integrations service
-
+4. Use context to opt-out of deploying the integrations service:
+   - `cdk synth -c deployIntegrationApi=false`
+   - `cdk deploy --context env=dev --context deployIntegrationApi=false`
+5. Build docker images:
+   - `docker buildx build --platform linux/amd64 -t integration-api:latest .`
+   
 ## Team
 
 Marketing Technology Team @ Advertising

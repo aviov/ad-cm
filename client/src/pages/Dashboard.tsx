@@ -28,10 +28,10 @@ import {
 } from '@chakra-ui/react';
 import { AddIcon, ExternalLinkIcon } from '@chakra-ui/icons';
 import { campaignApi, countryApi } from '../services/api';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 import { formatDistance } from 'date-fns';
 import { formatNumber, formatEUR } from '../utils/formatters';
 import { Country } from '../types';
+import { BarChart, Bar, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -41,7 +41,6 @@ const Dashboard: React.FC = () => {
   const bgColor = useColorModeValue('white', 'gray.800');
   const createBtnBg = useColorModeValue('#00e1ff', '#00c4dd');
   const createBtnHoverBg = useColorModeValue('#00c4dd', '#00b3cc');
-  // const textColor = useColorModeValue('#333', '#FFF');
   const mutedTextColor = useColorModeValue('#666', '#DDD');
   const gridBgColor = useColorModeValue('rgba(0, 0, 0, 0.03)', 'rgba(255, 255, 255, 0.03)');
   const cursorFill = useColorModeValue('rgba(0, 0, 0, 0.02)', 'rgba(255, 255, 255, 0.02)');
@@ -318,7 +317,7 @@ const Dashboard: React.FC = () => {
                   }}
                 />
                 <Bar dataKey="budget">
-                  {countryData.map((entry, index) => (
+                  {countryData.map((_, index) => (
                     <Cell key={`cell-${index}`} fill={COUNTRY_COLORS[index % COUNTRY_COLORS.length]} />
                   ))}
                 </Bar>
@@ -390,7 +389,7 @@ const Dashboard: React.FC = () => {
                     );
                   }}
                 >
-                  {countryDistributionData.map((entry, index) => (
+                  {countryDistributionData.map((_, index) => (
                     <Cell 
                       key={`cell-${index}`} 
                       fill={COUNTRY_COLORS[index % COUNTRY_COLORS.length]} 

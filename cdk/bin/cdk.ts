@@ -40,6 +40,7 @@ const envConfig = {
 
 // Determine which environment to deploy based on context or default to dev
 const deployEnv = app.node.tryGetContext('env') || 'dev';
+const deployIntegrationApi = app.node.tryGetContext('deployIntegrationApi') === 'true';
 const config = envConfig[deployEnv as keyof typeof envConfig];
 
 // Create the stacks
@@ -60,6 +61,7 @@ const dbStack = new DbStack(app, `${appName}-${config.environment}-db`, {
   environment: config.environment,
   vpc: networkStack.vpc,
   databaseSecurityGroup: networkStack.databaseSecurityGroup,
+  apiSecurityGroup: networkStack.apiSecurityGroup,
   env,
   description: `Database infrastructure for ${appName} ${config.environment} environment`,
   tags: {
@@ -77,6 +79,7 @@ const apiStack = new ApiStack(app, `${appName}-${config.environment}-api`, {
   dbEndpoint: dbStack.dbEndpoint,
   dbCredentials: dbStack.dbCredentials,
   env,
+  deployIntegrationApi,
   description: `API services for ${appName} ${config.environment} environment`,
   tags: {
     Application: appName,
@@ -97,3 +100,6 @@ const frontendStack = new FrontendStack(app, `${appName}-${config.environment}-f
     ManagedBy: 'CDK',
   },
 });
+
+// Add explicit dependency to ensure the API stack is deployed before the frontend
+frontendStack.addDependency(apiStack);
