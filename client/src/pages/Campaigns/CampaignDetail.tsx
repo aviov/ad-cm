@@ -76,6 +76,7 @@ const CampaignDetail: React.FC = () => {
   const inactiveStatBgColor = useColorModeValue('gray.50', 'gray.700');
   const inactiveStatBorderColor = useColorModeValue('gray.200', 'gray.600');
   const inactiveStatHelpTextColor = useColorModeValue('gray.600', 'gray.300');
+  const badgeVariant = useColorModeValue('subtle', 'solid');
 
   // Fetch campaign details
   const { data: campaign, isLoading, isError } = useQuery(
@@ -350,7 +351,7 @@ const CampaignDetail: React.FC = () => {
                 <Td>
                   <Badge
                     colorScheme={payout.budgetAlert ? 'green' : 'gray'}
-                    variant={useColorModeValue('subtle', 'solid')}
+                    variant={badgeVariant}
                   >
                     {payout.budgetAlert ? 'ENABLED' : 'DISABLED'}
                   </Badge>
