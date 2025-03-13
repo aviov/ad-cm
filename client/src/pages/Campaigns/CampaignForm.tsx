@@ -33,6 +33,7 @@ import {
   Flex,
   useColorModeValue,
   Tooltip,
+  SimpleGrid,
 } from '@chakra-ui/react';
 import { AddIcon, DeleteIcon, InfoIcon } from '@chakra-ui/icons';
 import { campaignApi, countryApi } from '../../services/api';
@@ -233,28 +234,31 @@ const CampaignForm: React.FC = () => {
       >
         {({ values, errors, touched, isSubmitting }) => (
           <Form>
-            <VStack spacing={6} align="start">
-              <FormControl isInvalid={!!errors.title && touched.title}>
-                <FormLabel htmlFor="title">Campaign Title</FormLabel>
-                <Field
-                  as={Input}
-                  id="title"
-                  name="title"
-                  placeholder="Enter campaign title"
-                />
-                <FormErrorMessage>{errors.title}</FormErrorMessage>
-              </FormControl>
+            <VStack spacing={6} align="start" width="100%">
+              {/* Title and URL in side-by-side layout on larger screens */}
+              <SimpleGrid columns={{ base: 1, md: 2 }} spacing={4} width="100%">
+                <FormControl isInvalid={!!errors.title && touched.title}>
+                  <FormLabel htmlFor="title">Campaign Title</FormLabel>
+                  <Field
+                    as={Input}
+                    id="title"
+                    name="title"
+                    placeholder="Enter campaign title"
+                  />
+                  <FormErrorMessage>{errors.title}</FormErrorMessage>
+                </FormControl>
 
-              <FormControl isInvalid={!!errors.landingPageUrl && touched.landingPageUrl}>
-                <FormLabel htmlFor="landingPageUrl">Landing Page URL</FormLabel>
-                <Field
-                  as={Input}
-                  id="landingPageUrl"
-                  name="landingPageUrl"
-                  placeholder="https://example.com/landing-page"
-                />
-                <FormErrorMessage>{errors.landingPageUrl}</FormErrorMessage>
-              </FormControl>
+                <FormControl isInvalid={!!errors.landingPageUrl && touched.landingPageUrl}>
+                  <FormLabel htmlFor="landingPageUrl">Landing Page URL</FormLabel>
+                  <Field
+                    as={Input}
+                    id="landingPageUrl"
+                    name="landingPageUrl"
+                    placeholder="https://example.com/landing-page"
+                  />
+                  <FormErrorMessage>{errors.landingPageUrl}</FormErrorMessage>
+                </FormControl>
+              </SimpleGrid>
 
               <FormControl display="flex" alignItems="center">
                 <FormLabel htmlFor="isRunning" mb="0">
