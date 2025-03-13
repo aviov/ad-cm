@@ -519,6 +519,9 @@ const Dashboard: React.FC = () => {
           boxShadow="sm"
           borderRadius="md"
           bgGradient="linear(to-r, brand.50, blue.50)"
+          bg={bgColor}
+          borderWidth="1px"
+          borderColor={useColorModeValue("gray.200", "gray.700")}
         >
           <Heading size="md" mb={4} textAlign="center">
             Welcome to Campaign Management!
