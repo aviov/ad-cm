@@ -49,6 +49,8 @@ services:
     environment:
       - NODE_ENV=development
       - CORE_API_URL=http://core-api:3000
+      - PORT=4000
+    command: npm run docker:dev
     depends_on:
       - core-api
 

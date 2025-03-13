@@ -9,6 +9,7 @@ export interface DbStackProps extends cdk.StackProps {
   environment: string;
   vpc: ec2.Vpc;
   databaseSecurityGroup: ec2.SecurityGroup;
+  apiSecurityGroup: ec2.SecurityGroup;
 }
 
 export class DbStack extends cdk.Stack {
@@ -47,6 +48,22 @@ export class DbStack extends cdk.Stack {
       },
     });
 
+    // Allow inbound connections from the API security group to the existing DB security group
+    props.databaseSecurityGroup.addIngressRule(
+      props.apiSecurityGroup,
+      ec2.Port.tcp(5432),
+      'Allow access from API services'
+    );
+
+    // Also allow connections from the entire VPC CIDR range for internal services
+    props.vpc.privateSubnets.forEach(subnet => {
+      props.databaseSecurityGroup.addIngressRule(
+        ec2.Peer.ipv4(subnet.ipv4CidrBlock),
+        ec2.Port.tcp(5432),
+        `Allow access from private subnet ${subnet.subnetId}`
+      );
+    });
+
     // Parameter group for customizing PostgreSQL settings
     const parameterGroup = new rds.ParameterGroup(this, 'DBParameterGroup', {
       engine: rds.DatabaseInstanceEngine.postgres({
@@ -56,8 +73,10 @@ export class DbStack extends cdk.Stack {
       parameters: {
         // Add any custom parameters here
         'max_connections': '100',
-        'shared_buffers': '32MB', // Increase for production
+        'shared_buffers': '32768', // 32MB in KB, specified as integer
         'log_statement': props.environment === 'dev' ? 'all' : 'none',
+        // Set rds.force_ssl to off to allow non-SSL connections during development
+        'rds.force_ssl': props.environment === 'prod' ? '1' : '0',
       },
     });
 

@@ -76,17 +76,82 @@ The most valuable features and data structure is described by entities Campaign,
 
 ### Local Setup
 1. Clone the repository
-2. Run `docker-compose up` to start the development environment
+2. Run `docker-compose up core-api` to start the development environment
 3. Navigate to client directory and run `npm install` and `npm run dev`
 
+### Seeding Initial Data
+
+The application requires country data to be available for campaign creation. To seed the local database with countries:
+
+#### Local Development
+```bash
+# Navigate to core-api directory
+cd core-api
+
+# Run the seed script
+npm run seed
+```
+This script will populate the database with a comprehensive list of countries including their names, ISO codes, and continent information. The seed data is essential for:
+
+- Country selection in campaign creation forms
+- Geographic targeting of campaigns
+- Regional analytics and reporting
+
 ### Deployment
-1. Use the client.yml workflow to deploy the frontend
-2. Use the core-api.yml workflow to deploy the backend
-3. Use the integration-api.yml workflow to deploy the integrations service
 
-## Team
+For comprehensive deployment instructions including build, push, and deployment steps, refer to:
+- [CDK Deployment Guide](./cdk/README.md)
 
-Marketing Technology Team @ Advertising
+This project uses AWS CDK for infrastructure as code and deployment. The infrastructure is defined as separate stacks:
+
+- **Network Stack**: VPC, subnets, security groups, and other networking resources
+- **Database Stack**: RDS PostgreSQL instance and Secrets Manager for credentials
+- **API Stack**: ECS Fargate services for core-api with health checks and IAM roles
+- **Frontend Stack**: CloudFront distribution and S3 bucket for static web content
+
+#### Seed Data to deployed RDS Database (after aws bootstrap and network deployment)
+If you're running in a production or deployed dev environment, you can execute the seed command using ECS:
+
+```bash
+# Get the task definition ARN
+TASK_DEF=$(aws ecs describe-task-definition --task-definition ad-cm-dev-core-api \
+  --query "taskDefinition.taskDefinitionArn" --output text)
+
+# Get VPC ID
+VPC_ID=$(aws cloudformation describe-stacks --stack-name ad-cm-dev-network \
+  --query "Stacks[0].Outputs[?OutputKey=='VpcId'].OutputValue" --output text)
+
+# Get private subnet IDs - using the exact output key instead of filtering by tag
+PRIVATE_SUBNET=$(aws cloudformation describe-stacks --stack-name ad-cm-dev-network \
+  --query "Stacks[0].Outputs[?OutputKey=='ExportsOutputRefVPCprivatewithnatSubnet1SubnetD2141BCFEE648F36'].OutputValue" --output text)
+
+# Alternative method if you need to find it by description
+# PRIVATE_SUBNET=$(aws ec2 describe-subnets --filters "Name=vpc-id,Values=$VPC_ID" \
+#   "Name=tag:Name,Values=*privatewithnat*" --query "Subnets[0].SubnetId" --output text)
+
+# Get security group ID
+SG_ID=$(aws cloudformation describe-stacks --stack-name ad-cm-dev-network \
+  --query "Stacks[0].Outputs[?OutputKey=='ApiSecurityGroupId'].OutputValue" --output text)
+
+# Run the task with the seed command
+aws ecs run-task --cluster ad-cm-dev-cluster \
+  --task-definition $TASK_DEF \
+  --overrides '{"containerOverrides": [{"name":"CoreApiContainer","command":["npm","run","seed"]}]}' \
+  --network-configuration "awsvpcConfiguration={subnets=[\"$PRIVATE_SUBNET\"],securityGroups=[\"$SG_ID\"],assignPublicIp=DISABLED}" \
+  --launch-type FARGATE
+```
+To monitor the task progress, you can check the logs in CloudWatch:
+
+```bash
+# Get the task ID from the output of the run-task command
+TASK_ID="task-id-from-previous-command"
+
+# Check logs in CloudWatch
+aws logs get-log-events \
+  --log-group-name "/ecs/ad-cm-dev" \
+  --log-stream-name "core-api/CoreApiContainer/$TASK_ID" \
+  --limit 100
+```
 
 ## License
 

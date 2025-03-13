@@ -4,8 +4,9 @@ import * as cloudfront from 'aws-cdk-lib/aws-cloudfront';
 import * as origins from 'aws-cdk-lib/aws-cloudfront-origins';
 import * as s3deploy from 'aws-cdk-lib/aws-s3-deployment';
 import * as iam from 'aws-cdk-lib/aws-iam';
-import * as cr from 'aws-cdk-lib/custom-resources';
-import * as lambda from 'aws-cdk-lib/aws-lambda';
+// import * as cr from 'aws-cdk-lib/custom-resources';
+// import * as lambda from 'aws-cdk-lib/aws-lambda';
+import { URL } from 'url';
 import { Construct } from 'constructs';
 
 export interface FrontendStackProps extends cdk.StackProps {
@@ -21,9 +22,10 @@ export class FrontendStack extends cdk.Stack {
     // Create an S3 bucket to host the static website
     const websiteBucket = new s3.Bucket(this, 'WebsiteBucket', {
       bucketName: `${props.appName}-${props.environment}-frontend`,
-      websiteIndexDocument: 'index.html',
-      websiteErrorDocument: 'index.html', // SPA routing support
-      publicReadAccess: false, // We'll use CloudFront OAI for access control
+      // Remove website-specific settings as we're using CloudFront with OAI
+      // websiteIndexDocument: 'index.html',
+      // websiteErrorDocument: 'index.html',
+      publicReadAccess: false,
       blockPublicAccess: s3.BlockPublicAccess.BLOCK_ALL,
       removalPolicy: props.environment === 'prod'
         ? cdk.RemovalPolicy.RETAIN
@@ -46,7 +48,7 @@ export class FrontendStack extends cdk.Stack {
       comment: `OAI for ${props.appName} ${props.environment} frontend`,
     });
 
-    // Grant read permissions to CloudFront
+    // Grant read permissions to CloudFront - IMPORTANT: Use this explicit policy
     websiteBucket.addToResourcePolicy(
       new iam.PolicyStatement({
         actions: ['s3:GetObject'],
@@ -77,7 +79,10 @@ export class FrontendStack extends cdk.Stack {
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       defaultRootObject: 'index.html',
       defaultBehavior: {
-        origin: new origins.HttpOrigin(websiteBucket.bucketWebsiteUrl),
+        // Use S3 origin with OAI instead of website URL
+        origin: new origins.S3Origin(websiteBucket, {
+          originAccessIdentity
+        }),
         compress: true,
         allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD_OPTIONS,
         viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
@@ -85,11 +90,26 @@ export class FrontendStack extends cdk.Stack {
       },
       additionalBehaviors: {
         '/assets/*': {
-          origin: new origins.HttpOrigin(websiteBucket.bucketWebsiteUrl),
+          // Use S3 origin with OAI instead of website URL
+          origin: new origins.S3Origin(websiteBucket, {
+            originAccessIdentity
+          }),
           compress: true,
           allowedMethods: cloudfront.AllowedMethods.ALLOW_GET_HEAD,
           viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
           cachePolicy,
+        },
+        '/api/*': {
+          origin: new origins.HttpOrigin('ad-cm-dev-alb-1169756354.eu-central-1.elb.amazonaws.com', {
+            protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
+            httpPort: 8080,
+            originPath: ''
+          }),
+          allowedMethods: cloudfront.AllowedMethods.ALLOW_ALL,
+          viewerProtocolPolicy: cloudfront.ViewerProtocolPolicy.REDIRECT_TO_HTTPS,
+          cachePolicy: cloudfront.CachePolicy.CACHING_DISABLED,
+          originRequestPolicy: cloudfront.OriginRequestPolicy.ALL_VIEWER,
+          responseHeadersPolicy: cloudfront.ResponseHeadersPolicy.CORS_ALLOW_ALL_ORIGINS_WITH_PREFLIGHT
         },
       },
       errorResponses: [
@@ -97,6 +117,12 @@ export class FrontendStack extends cdk.Stack {
           httpStatus: 404,
           responseHttpStatus: 200,
           responsePagePath: '/index.html', // Handle client-side routing
+          ttl: cdk.Duration.minutes(30),
+        },
+        {
+          httpStatus: 403,
+          responseHttpStatus: 200,
+          responsePagePath: '/index.html', // Also handle 403 errors by serving index.html
           ttl: cdk.Duration.minutes(30),
         },
       ],
@@ -108,7 +134,7 @@ export class FrontendStack extends cdk.Stack {
     // Create a runtime config file in S3
     // Instead of using a custom resource with a provider, we'll create a simple config file directly
     const configContent = JSON.stringify({
-      apiEndpoint: props.apiEndpoint,
+      apiEndpoint: props.apiEndpoint, // Use the provided API endpoint string
       environment: props.environment,
       timestamp: Date.now().toString()
     });
@@ -123,18 +149,6 @@ export class FrontendStack extends cdk.Stack {
       distribution, // Invalidate cache on deploy
       distributionPaths: ['/config/config.json'],
     });
-
-    // Deploy frontend assets to S3
-    // Note: In a real setup, this would be done through CI/CD
-    // This is just a placeholder to show how it would be done through CDK
-    /*
-    const frontendDeployment = new s3deploy.BucketDeployment(this, 'DeployFrontend', {
-      sources: [s3deploy.Source.asset('../client/build')], // Adjust path as necessary
-      destinationBucket: websiteBucket,
-      distribution,
-      distributionPaths: ['/*'],
-    });
-    */
 
     // Deploy basic index.html file to get started
     const basicIndexHtml = `
@@ -173,13 +187,14 @@ export class FrontendStack extends cdk.Stack {
         </html>
     `;
 
+    // Use a more explicit deployment configuration
     new s3deploy.BucketDeployment(this, 'DeployPlaceholderIndex', {
-    sources: [
+      sources: [
         s3deploy.Source.data('index.html', basicIndexHtml)
-    ],
-    destinationBucket: websiteBucket,
-    distribution,
-    distributionPaths: ['/index.html'],
+      ],
+      destinationBucket: websiteBucket,
+      distribution,
+      distributionPaths: ['/*'], // More aggressive invalidation pattern
     });
 
     // Create CloudFormation outputs
@@ -200,13 +215,15 @@ export class FrontendStack extends cdk.Stack {
       description: 'The URL of the frontend application',
       exportName: `${props.appName}-${props.environment}-frontend-url`,
     });
-    
-    new cdk.CfnOutput(this, 'ConfigUrl', {
-      value: `https://${distribution.distributionDomainName}/config/config.json`,
-      description: 'The URL of the runtime configuration file',
-      exportName: `${props.appName}-${props.environment}-config-url`,
+
+    // Add an output with the API endpoint we're using
+    new cdk.CfnOutput(this, 'ConfiguredApiEndpoint', {
+      value: props.apiEndpoint,
+      description: 'The API endpoint configured for the frontend',
+      exportName: `${props.appName}-${props.environment}-configured-api-endpoint`,
     });
 
+    // Add distribution ID output for easier cache invalidation
     new cdk.CfnOutput(this, 'DistributionId', {
       value: distribution.distributionId,
       description: 'The ID of the CloudFront distribution',

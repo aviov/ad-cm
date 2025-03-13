@@ -15,10 +15,12 @@ export const AppDataSource = new DataSource({
   password: process.env.DB_PASSWORD || "postgres",
   database: process.env.DB_NAME || "ad-cm",
   // url: process.env.DATABASE_URL,  // Use the DATABASE_URL from .env directly
-  synchronize: process.env.NODE_ENV === "development",
+  synchronize: true, // Temporarily force this to be true for all environments
+  // synchronize: process.env.NODE_ENV === "development",
   logging: process.env.NODE_ENV === "development",
   entities: [Campaign, Country, Payout],
   migrations: [__dirname + "/migrations/**/*.ts"],
-  migrationsRun: process.env.NODE_ENV !== "development",
+  migrationsRun: false, // Disable migrations run for now
+  // migrationsRun: process.env.NODE_ENV !== "development",
   subscribers: [],
 });
