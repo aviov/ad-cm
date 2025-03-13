@@ -79,6 +79,53 @@ The most valuable features and data structure is described by entities Campaign,
 2. Run `docker-compose up core-api` to start the development environment
 3. Navigate to client directory and run `npm install` and `npm run dev`
 
+### Getting Started
+
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/yourusername/ad-cm.git
+   cd ad-cm
+   ```
+
+2. Install dependencies:
+   ```bash
+   # Install client dependencies
+   cd client
+   npm install
+   
+   # Install core-api dependencies
+   cd ../core-api
+   npm install
+   ```
+
+3. Start development environment:
+   
+   From the root directory start core-api
+   ```bash
+   docker-compose up core-api
+   ```
+   From client directory start client
+   ```bash
+   cd ../client
+   npm run dev
+   ```
+   Client build and start
+   ```bash
+   cd ../client
+   npm run build
+   npm run start
+   ```
+
+4. Access the applications:
+   - Client: http://localhost:3500
+   - Core API: http://localhost:3000
+
+### Environment Configuration
+
+Each component of the application requires specific environment variables to function properly.
+
+Create and modify the `.env` files with your specific configuration values as per the `.env.example` files.
+
 ### Seeding Initial Data
 
 The application requires country data to be available for campaign creation. To seed the local database with countries:
