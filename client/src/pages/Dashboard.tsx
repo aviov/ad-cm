@@ -455,13 +455,16 @@ const Dashboard: React.FC = () => {
         </Flex>
         
         {recentCampaigns.length > 0 ? (
-          <Table variant="simple">
+          <Table variant="simple" size={{ base: "sm", md: "md" }}>
             <Thead>
               <Tr>
                 <Th>Title</Th>
                 <Th>Status</Th>
-                <Th>Landing Page</Th>
-                <Th>Updated</Th>
+                <Th>
+                  <Box display={{ base: 'none', md: 'block' }}>Landing Page</Box>
+                  <Box display={{ base: 'block', md: 'none' }}>Link</Box>
+                </Th>
+                <Th display={{ base: 'none', md: 'table-cell' }}>Updated</Th>
                 <Th>Payouts</Th>
               </Tr>
             </Thead>
@@ -484,14 +487,28 @@ const Dashboard: React.FC = () => {
                     </Badge>
                   </Td>
                   <Td>
-                    <Link href={campaign.landingPageUrl} isExternal color="cyan.500">
-                      {campaign.landingPageUrl.length > 30
-                        ? campaign.landingPageUrl.substring(0, 30) + '...'
-                        : campaign.landingPageUrl}
-                      <ExternalLinkIcon mx="2px" />
-                    </Link>
+                    {/* Desktop view with truncated URL */}
+                    <Box display={{ base: 'none', md: 'block' }}>
+                      <Link href={campaign.landingPageUrl} isExternal color="cyan.500">
+                        {campaign.landingPageUrl.length > 30
+                          ? campaign.landingPageUrl.substring(0, 30) + '...'
+                          : campaign.landingPageUrl}
+                        <ExternalLinkIcon mx="2px" />
+                      </Link>
+                    </Box>
+                    {/* Mobile view with icon only */}
+                    <Box display={{ base: 'block', md: 'none' }}>
+                      <Link 
+                        href={campaign.landingPageUrl} 
+                        isExternal 
+                        color="cyan.500"
+                        aria-label={`Visit landing page: ${campaign.landingPageUrl}`}
+                      >
+                        <ExternalLinkIcon boxSize="20px" />
+                      </Link>
+                    </Box>
                   </Td>
-                  <Td>
+                  <Td display={{ base: 'none', md: 'table-cell' }}>
                     {formatDistance(new Date(campaign.updatedAt), new Date(), { addSuffix: true })}
                   </Td>
                   <Td>
