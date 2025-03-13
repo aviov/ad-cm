@@ -7,7 +7,7 @@ node_modules
 .cdk.staging
 cdk.out
 
-# CDK local
-local
-policies
-tasks
+# CDK environment-specific directories
+/local/
+/tasks/
+/policies/

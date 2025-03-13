@@ -76,11 +76,24 @@ export class ApiStack extends cdk.Stack {
     // Task execution role
     const executionRole = new iam.Role(this, 'TaskExecutionRole', {
       assumedBy: new iam.ServicePrincipal('ecs-tasks.amazonaws.com'),
-      roleName: `${props.appName}-${props.environment}-execution-role`,
+      roleName: `${props.appName}-${props.environment}-core-api-execution-role`,
       managedPolicies: [
         iam.ManagedPolicy.fromAwsManagedPolicyName('service-role/AmazonECSTaskExecutionRolePolicy'),
       ],
     });
+
+    // Add specific permissions for Secrets Manager with more detailed actions
+    const secretsPolicy = new iam.PolicyStatement({
+      effect: iam.Effect.ALLOW,
+      actions: [
+        'secretsmanager:GetSecretValue',
+        'secretsmanager:DescribeSecret',
+        'secretsmanager:ListSecretVersionIds'
+      ],
+      resources: [props.dbCredentials.secretArn],
+    });
+    
+    executionRole.addToPolicy(secretsPolicy);
 
     // Allow reading the database credentials secret
     props.dbCredentials.grantRead(executionRole);
@@ -105,6 +118,8 @@ export class ApiStack extends cdk.Stack {
         interval: cdk.Duration.seconds(30),
         healthyHttpCodes: '200',
         timeout: cdk.Duration.seconds(5),
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 3,
       },
     });
 
@@ -121,6 +136,8 @@ export class ApiStack extends cdk.Stack {
           interval: cdk.Duration.seconds(30),
           healthyHttpCodes: '200',
           timeout: cdk.Duration.seconds(5),
+          healthyThresholdCount: 2,
+          unhealthyThresholdCount: 3,
         },
       });
     }
@@ -198,19 +215,21 @@ export class ApiStack extends cdk.Stack {
       },
       secrets: {
         // Extract username and password from the secrets manager
-        DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'postgres_admin'),
+        DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'username'),
         DB_PASSWORD: ecs.Secret.fromSecretsManager(props.dbCredentials, 'password'),
       },
       healthCheck: {
         command: [
           'CMD-SHELL', 
-          'node -e "const http = require(\'http\'); const options = { hostname: \'localhost\', port: 3000, path: \'/health\', method: \'GET\', timeout: 5000 }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on(\'error\', () => { process.exit(1); }); req.setTimeout(5000, () => { process.exit(1); }); req.end();"'
+          'node -e "const http = require(\'http\'); const options = { hostname: \'localhost\', port: 3000, path: \'/health\', method: \'GET\' }; const req = http.request(options, (res) => { process.exit(res.statusCode === 200 ? 0 : 1); }); req.on(\'error\', () => { process.exit(1); }); req.end();"'
         ],
         interval: cdk.Duration.seconds(30),
         timeout: cdk.Duration.seconds(10),
         retries: 5,
-        startPeriod: cdk.Duration.seconds(120) // Longer startup period to allow database connection
-      }
+        startPeriod: cdk.Duration.seconds(60)  // Reduced from 120 as we now have a resilient application startup
+      },
+      // Add graceful shutdown handling
+      stopTimeout: cdk.Duration.seconds(30),
     });
 
     coreApiContainer.addPortMappings({
@@ -236,7 +255,7 @@ export class ApiStack extends cdk.Stack {
           DB_PORT: '5432',
         },
         secrets: {
-          DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'postgres_admin'),
+          DB_USER: ecs.Secret.fromSecretsManager(props.dbCredentials, 'username'),
           DB_PASSWORD: ecs.Secret.fromSecretsManager(props.dbCredentials, 'password'),
         },
         healthCheck: {
@@ -250,6 +269,8 @@ export class ApiStack extends cdk.Stack {
           retries: 5,                         // Allow 5 failures before marking unhealthy
           startPeriod: cdk.Duration.seconds(60) // Give container 60s to start before health checks count
         },
+        // Add graceful shutdown handling
+        stopTimeout: cdk.Duration.seconds(30),
       });
 
       integrationApiContainer.addPortMappings({
@@ -282,6 +303,7 @@ export class ApiStack extends cdk.Stack {
       },
       minHealthyPercent: 100, // Ensures at least the desired count is running
       maxHealthyPercent: 200, // Allows scaling up to double during deployments
+      circuitBreaker: { rollback: true },  // Add circuit breaker pattern for failed deployments
     });
 
     let integrationApiService;
@@ -306,6 +328,9 @@ export class ApiStack extends cdk.Stack {
         vpcSubnets: {
           subnetType: ec2.SubnetType.PRIVATE_WITH_EGRESS,
         },
+        minHealthyPercent: 100, // Ensures at least the desired count is running
+        maxHealthyPercent: 200, // Allows scaling up to double during deployments
+        circuitBreaker: { rollback: true },  // Add circuit breaker pattern for failed deployments
       });
     }
 
