@@ -25,8 +25,9 @@ import {
   AlertIcon,
   Switch,
   useToast,
+  Link,
 } from '@chakra-ui/react';
-import { AddIcon, EditIcon, DeleteIcon, SearchIcon } from '@chakra-ui/icons';
+import { AddIcon, EditIcon, DeleteIcon, SearchIcon, ExternalLinkIcon } from '@chakra-ui/icons';
 import { campaignApi } from '../../services/api';
 import { Campaign } from '../../types';
 
@@ -158,11 +159,14 @@ const CampaignList: React.FC = () => {
           No campaigns found. Create your first campaign by clicking the "Create Campaign" button.
         </Alert>
       ) : (
-        <Table variant="simple">
+        <Table variant="simple" size={{ base: "sm", md: "md" }}>
           <Thead>
             <Tr>
               <Th>Title</Th>
-              <Th>Landing Page</Th>
+              <Th>
+                <Box display={{ base: 'none', md: 'block' }}>Landing Page</Box>
+                <Box display={{ base: 'block', md: 'none' }}>Link</Box>
+              </Th>
               <Th>Status</Th>
               <Th>Payouts</Th>
               <Th>Actions</Th>
@@ -181,16 +185,30 @@ const CampaignList: React.FC = () => {
                   </Text>
                 </Td>
                 <Td>
-                  <Text 
-                    isTruncated 
-                    maxW="250px" 
-                    color="blue.600" 
-                    as="a" 
-                    href={campaign.landingPageUrl} 
-                    target="_blank"
-                  >
-                    {campaign.landingPageUrl}
-                  </Text>
+                  {/* Desktop view with truncated URL */}
+                  <Box display={{ base: 'none', md: 'block' }}>
+                    <Link 
+                      href={campaign.landingPageUrl}
+                      isExternal 
+                      color="cyan.500"
+                    >
+                      {campaign.landingPageUrl.length > 30
+                        ? campaign.landingPageUrl.substring(0, 30) + '...'
+                        : campaign.landingPageUrl}
+                      <ExternalLinkIcon mx="2px" />
+                    </Link>
+                  </Box>
+                  {/* Mobile view with icon only */}
+                  <Box display={{ base: 'block', md: 'none' }}>
+                    <Link 
+                      href={campaign.landingPageUrl} 
+                      isExternal 
+                      color="cyan.500"
+                      aria-label={`Visit landing page: ${campaign.landingPageUrl}`}
+                    >
+                      <ExternalLinkIcon boxSize="20px" />
+                    </Link>
+                  </Box>
                 </Td>
                 <Td>
                   <Flex align="center">

@@ -120,11 +120,13 @@ npm run build
 
 # Get the S3 bucket name from CloudFormation outputs
 S3_BUCKET=$(aws cloudformation describe-stacks --stack-name ad-cm-dev-frontend \
-  --query "Stacks[0].Outputs[?OutputKey=='BucketName'].OutputValue" \
-  --output text)
+  --query "Stacks[0].Outputs[?OutputKey=='WebsiteBucketName'].OutputValue" --output text)
 
 # Sync the new build to S3
 aws s3 sync dist/ s3://$S3_BUCKET/ --delete
+
+# Get stack outputs to find the CloudFront domain name
+aws cloudformation describe-stacks --stack-name ad-cm-dev-frontend --query "Stacks[0].Outputs" --output json
 
 # Get the CloudFront distribution ID
 DIST_ID=$(aws cloudformation describe-stacks --stack-name ad-cm-dev-frontend \

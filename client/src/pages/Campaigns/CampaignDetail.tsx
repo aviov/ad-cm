@@ -36,8 +36,11 @@ import {
   ModalBody,
   ModalCloseButton,
   useColorModeValue,
+  IconButton,
+  Icon,
 } from '@chakra-ui/react';
 import { ExternalLinkIcon, EditIcon, DeleteIcon } from '@chakra-ui/icons';
+import { HiPlay, HiStop } from 'react-icons/hi';
 import { campaignApi } from '../../services/api';
 import { formatDistance } from 'date-fns';
 import { formatNumber, formatEUR } from '../../utils/formatters';
@@ -73,6 +76,7 @@ const CampaignDetail: React.FC = () => {
   const inactiveStatBgColor = useColorModeValue('gray.50', 'gray.700');
   const inactiveStatBorderColor = useColorModeValue('gray.200', 'gray.600');
   const inactiveStatHelpTextColor = useColorModeValue('gray.600', 'gray.300');
+  const badgeVariant = useColorModeValue('subtle', 'solid');
 
   // Fetch campaign details
   const { data: campaign, isLoading, isError } = useQuery(
@@ -169,8 +173,11 @@ const CampaignDetail: React.FC = () => {
       <Flex justify="space-between" align="center" mb={6}>
         <VStack align="start" spacing={1}>
           <Heading size="lg">{campaign.title}</Heading>
-          <Link href={campaign.landingPageUrl} isExternal color="blue.500">
-            {campaign.landingPageUrl} <ExternalLinkIcon mx="2px" />
+          <Link href={campaign.landingPageUrl} isExternal color="cyan.500">
+            {campaign.landingPageUrl.length > 30
+              ? campaign.landingPageUrl.substring(0, 30) + '...'
+              : campaign.landingPageUrl}
+            <ExternalLinkIcon mx="2px" />
           </Link>
         </VStack>
         <HStack spacing={3}>
@@ -183,11 +190,21 @@ const CampaignDetail: React.FC = () => {
             }}
             color="black"
             fontWeight="bold"
+            display={{ base: 'none', md: 'flex' }}
           >
             {campaign.isRunning ? 'Stop Campaign' : 'Start Campaign'}
           </Button>
+          <IconButton
+            aria-label={campaign.isRunning ? 'Stop Campaign' : 'Start Campaign'}
+            icon={campaign.isRunning ? <Icon as={HiStop} boxSize="24px" /> : <Icon as={HiPlay} boxSize="24px" />}
+            colorScheme={campaign.isRunning ? 'red' : 'green'}
+            onClick={handleToggleStatus}
+            isLoading={toggleMutation.isLoading}
+            display={{ base: 'flex', md: 'none' }}
+            size="lg"
+          />
           <Button
-            leftIcon={<EditIcon color="black" />}
+            leftIcon={<Icon as={EditIcon} boxSize="24px" />}
             onClick={() => navigate(`/campaigns/${id}/edit`)}
             colorScheme="cyan"
             color="black"
@@ -196,24 +213,49 @@ const CampaignDetail: React.FC = () => {
               bg: editBtnHoverBg,
               color: "black"
             }}
+            display={{ base: 'none', md: 'flex' }}
           >
             Edit
           </Button>
+          <IconButton
+            aria-label="Edit Campaign"
+            icon={<Icon as={EditIcon} boxSize="24px" />}
+            colorScheme="cyan"
+            onClick={() => navigate(`/campaigns/${id}/edit`)}
+            display={{ base: 'flex', md: 'none' }}
+            size="lg"
+          />
           <Button
-            leftIcon={<DeleteIcon />}
+            leftIcon={<Icon as={DeleteIcon} boxSize="24px" />}
             colorScheme="red"
             variant="outline"
             onClick={onOpen}
             borderColor={deleteBtnBorderColor}
             color={deleteBtnColor}
-            _hover={{
+            _hover={{ 
               bg: deleteBtnHoverBg,
               borderColor: deleteBtnHoverBorderColor,
               color: deleteBtnHoverColor
             }}
+            display={{ base: 'none', md: 'flex' }}
           >
             Delete
           </Button>
+          <IconButton
+            aria-label="Delete Campaign"
+            icon={<Icon as={DeleteIcon} boxSize="24px" />}
+            colorScheme="red"
+            variant="outline"
+            onClick={onOpen}
+            borderColor={deleteBtnBorderColor}
+            _hover={{ 
+              bg: deleteBtnHoverBg,
+              borderColor: deleteBtnHoverBorderColor,
+              color: deleteBtnHoverColor
+            }}
+            display={{ base: 'flex', md: 'none' }}
+            size="lg"
+          />
         </HStack>
       </Flex>
 
@@ -309,7 +351,7 @@ const CampaignDetail: React.FC = () => {
                 <Td>
                   <Badge
                     colorScheme={payout.budgetAlert ? 'green' : 'gray'}
-                    variant={useColorModeValue('subtle', 'solid')}
+                    variant={badgeVariant}
                   >
                     {payout.budgetAlert ? 'ENABLED' : 'DISABLED'}
                   </Badge>
