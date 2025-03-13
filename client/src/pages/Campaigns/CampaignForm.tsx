@@ -102,6 +102,8 @@ const CampaignForm: React.FC = () => {
   const cancelBtnHoverBorderColor = useColorModeValue('gray.300', 'white');
   const cancelBtnHoverColor = useColorModeValue('gray.800', 'white');
 
+  const stickyColumnBg = useColorModeValue('white', 'gray.800');
+
   // Fetch countries for dropdown
   const { data: countries, isLoading: isLoadingCountries } = useQuery(
     'countries',
@@ -283,241 +285,224 @@ const CampaignForm: React.FC = () => {
                 <FieldArray name="payouts">
                   {({ push, remove }) => (
                     <Box width="100%">
-                      <Table variant="simple" mb={4}>
-                        <Thead>
-                          <Tr>
-                            <Th>Country</Th>
-                            <Th>
-                              <Flex align="center">
-                                Amount
-                                <Tooltip 
-                                  label="The payout amount per conversion for this country" 
-                                  placement="top" 
-                                  hasArrow
-                                >
-                                  <InfoIcon ml={1} boxSize={3} color="gray.500" />
-                                </Tooltip>
-                              </Flex>
-                            </Th>
-                            <Th>
-                              <Flex align="center">
-                                Budget
-                                <Tooltip 
-                                  label="The maximum budget allocated for this country's campaign" 
-                                  placement="top" 
-                                  hasArrow
-                                >
-                                  <InfoIcon ml={1} boxSize={3} color="gray.500" />
-                                </Tooltip>
-                              </Flex>
-                            </Th>
-                            {/* <Th>Auto Stop</Th> */}
-                            <Th>Budget Alert</Th>
-                            <Th>Actions</Th>
-                          </Tr>
-                        </Thead>
-                        <Tbody>
-                          {values.payouts.map((_, index) => (
-                            <Tr key={index}>
-                              <Td>
-                                <FormControl isInvalid={
-                                  !!(errors.payouts?.[index] as any)?.countryId && 
-                                  (touched.payouts?.[index] as any)?.countryId
-                                }>
-                                  <Field
-                                    as={Select}
-                                    name={`payouts.${index}.countryId`}
+                      <Box overflowX="auto" maxWidth="100%">
+                        <Table variant="simple" mb={4} size={{ base: "sm", md: "md" }}>
+                          <Thead>
+                            <Tr>
+                              <Th position={{ base: "sticky", md: "relative" }} left={0} bg={stickyColumnBg} zIndex={1}>Country</Th>
+                              <Th>
+                                <Flex align="center">
+                                  Amount
+                                  <Tooltip 
+                                    label="The payout amount per conversion for this country" 
+                                    placement="top" 
+                                    hasArrow
                                   >
-                                    {countries?.map((country: Country) => (
-                                      <option key={country.id} value={country.id}>
-                                        {country.name} ({country.code})
-                                      </option>
-                                    ))}
-                                  </Field>
-                                  <FormErrorMessage>
-                                    {(errors.payouts?.[index] as any)?.countryId}
-                                  </FormErrorMessage>
-                                </FormControl>
-                              </Td>
-                              <Td>
-                                <FormControl isInvalid={
-                                  !!(errors.payouts?.[index] as any)?.amount && 
-                                  (touched.payouts?.[index] as any)?.amount
-                                }>
-                                  <Field name={`payouts.${index}.amount`}>
-                                    {({ field, form }: FieldProps) => (
-                                      <NumberInput
-                                        {...field}
-                                        isValidCharacter={(val) => /^[0-9.-]$/.test(val)} 
-                                        min={0}
-                                        precision={2}
-                                        step={1}
-                                        allowMouseWheel={false}
-                                        value={field.value === null || field.value === undefined ? '' : field.value}
-                                        onChange={(valueString) => {
-                                          // Remove any non-numeric characters except decimal point
-                                          valueString = valueString.replace(/[^0-9.]/g, '');
-                                          form.setFieldValue(field.name, valueString === '' ? 0 : Number(valueString));
-                                        }}
-                                      >
-                                        <NumberInputField placeholder="0.00" />
-                                      </NumberInput>
-                                    )}
-                                  </Field>
-                                  <FormErrorMessage>
-                                    {(errors.payouts?.[index] as any)?.amount}
-                                  </FormErrorMessage>
-                                </FormControl>
-                              </Td>
-                              <Td>
-                                <FormControl isInvalid={
-                                  !!(errors.payouts?.[index] as any)?.budget && 
-                                  (touched.payouts?.[index] as any)?.budget
-                                }>
-                                  <Field name={`payouts.${index}.budget`}>
-                                    {({ field, form }: FieldProps) => (
-                                      <NumberInput
-                                        {...field}
-                                        isValidCharacter={(val) => /^[0-9.-]$/.test(val)}
-                                        min={0}
-                                        precision={2}
-                                        step={1}
-                                        allowMouseWheel={false}
-                                        value={field.value === null || field.value === undefined ? '' : field.value}
-                                        onChange={(valueString) => {
-                                          // Remove any non-numeric characters except decimal point
-                                          valueString = valueString.replace(/[^0-9.]/g, '');
-                                          form.setFieldValue(
-                                            field.name,
-                                            valueString === '' ? 0 : Number(valueString)
-                                          );
-                                        }}
-                                      >
-                                        <NumberInputField placeholder="0.00" />
-                                      </NumberInput>
-                                    )}
-                                  </Field>
-                                  <FormErrorMessage>
-                                    {(errors.payouts?.[index] as any)?.budget}
-                                  </FormErrorMessage>
-                                </FormControl>
-                              </Td>
-                              {/* <Td>
-                                <Field
-                                  as={Switch}
-                                  name={`payouts.${index}.autoStop`}
-                                  colorScheme="red"
-                                />
-                              </Td> */}
-                              {/* <Td>
-                                <VStack align="start" spacing={2}>
-                                  <Field
-                                    as={Switch}
-                                    name={`payouts.${index}.budgetAlert`}
-                                    colorScheme="orange"
-                                  />
-                                  {values.payouts[index].budgetAlert && (
-                                    <FormControl isInvalid={
-                                      !!(errors.payouts?.[index] as any)?.budgetAlertEmail && 
-                                      (touched.payouts?.[index] as any)?.budgetAlertEmail
-                                    }>
-                                      <Field
-                                        as={Input}
-                                        name={`payouts.${index}.budgetAlertEmail`}
-                                        placeholder="Email for alerts"
-                                        size="sm"
-                                      />
-                                      <FormErrorMessage>
-                                        {(errors.payouts?.[index] as any)?.budgetAlertEmail}
-                                      </FormErrorMessage>
-                                    </FormControl>
-                                  )}
-                                </VStack>
-                              </Td> */}
-                              <Td>
-                                <Flex direction="row" alignItems="center" height="90px" width="100%" gap={3}>
-                                  {/* Toggle switch */}
-                                  <Box>
-                                    <Field name={`payouts.${index}.budgetAlert`}>
+                                    <InfoIcon ml={1} boxSize={3} color="gray.500" />
+                                  </Tooltip>
+                                </Flex>
+                              </Th>
+                              <Th>
+                                <Flex align="center">
+                                  Budget
+                                  <Tooltip 
+                                    label="The maximum budget allocated for this country's campaign" 
+                                    placement="top" 
+                                    hasArrow
+                                  >
+                                    <InfoIcon ml={1} boxSize={3} color="gray.500" />
+                                  </Tooltip>
+                                </Flex>
+                              </Th>
+                              {/* <Th>Auto Stop</Th> */}
+                              <Th display={{ base: "none", md: "table-cell" }}>Budget Alert</Th>
+                              <Th position={{ base: "sticky", md: "relative" }} right={0} bg={stickyColumnBg} zIndex={1}>Actions</Th>
+                            </Tr>
+                          </Thead>
+                          <Tbody>
+                            {values.payouts.map((_, index) => (
+                              <Tr key={index}>
+                                <Td>
+                                  <FormControl isInvalid={
+                                    !!(errors.payouts?.[index] as any)?.countryId && 
+                                    (touched.payouts?.[index] as any)?.countryId
+                                  }>
+                                    <Field
+                                      as={Select}
+                                      name={`payouts.${index}.countryId`}
+                                    >
+                                      {countries?.map((country: Country) => (
+                                        <option key={country.id} value={country.id}>
+                                          {country.name} ({country.code})
+                                        </option>
+                                      ))}
+                                    </Field>
+                                    <FormErrorMessage>
+                                      {(errors.payouts?.[index] as any)?.countryId}
+                                    </FormErrorMessage>
+                                  </FormControl>
+                                </Td>
+                                <Td>
+                                  <FormControl isInvalid={
+                                    !!(errors.payouts?.[index] as any)?.amount && 
+                                    (touched.payouts?.[index] as any)?.amount
+                                  }>
+                                    <Field name={`payouts.${index}.amount`}>
                                       {({ field, form }: FieldProps) => (
-                                        <Switch
-                                          id={`payouts.${index}.budgetAlert`}
-                                          isChecked={field.value === true}
-                                          colorScheme="orange"
-                                          onChange={(e) => {
-                                            form.setFieldValue(`payouts.${index}.budgetAlert`, e.target.checked);
-                                            // If toggled off, clear the email field
-                                            if (!e.target.checked) {
-                                              form.setFieldValue(`payouts.${index}.budgetAlertEmail`, '');
-                                            }
+                                        <NumberInput
+                                          {...field}
+                                          isValidCharacter={(val) => /^[0-9.-]$/.test(val)} 
+                                          min={0}
+                                          precision={2}
+                                          step={1}
+                                          allowMouseWheel={false}
+                                          value={field.value === null || field.value === undefined ? '' : field.value}
+                                          onChange={(valueString) => {
+                                            // Remove any non-numeric characters except decimal point
+                                            valueString = valueString.replace(/[^0-9.]/g, '');
+                                            form.setFieldValue(field.name, valueString === '' ? 0 : Number(valueString));
                                           }}
-                                        />
+                                        >
+                                          <NumberInputField 
+                                            placeholder="0.00" 
+                                            onFocus={(e) => e.target.select()}
+                                          />
+                                        </NumberInput>
                                       )}
                                     </Field>
-                                  </Box>
-                                  
-                                  {/* Email input field */}
-                                  {/*values.payouts[index].budgetAlert && */ (
-                                    <FormControl 
-                                      isInvalid={
-                                        !!(errors.payouts?.[index] as any)?.budgetAlertEmail && 
-                                        (touched.payouts?.[index] as any)?.budgetAlertEmail
-                                      }
-                                      flex="1"
-                                    >
-                                      <Field
-                                        as={Input}
-                                        name={`payouts.${index}.budgetAlertEmail`}
-                                        placeholder="this.feature@wip.dev"
-                                        size="sm"
-                                      />
-                                      <FormErrorMessage mt={1} fontSize="xs">
-                                        {(errors.payouts?.[index] as any)?.budgetAlertEmail}
-                                      </FormErrorMessage>
-                                    </FormControl>
-                                  )}
-                                </Flex>
-                              </Td>
-                              <Td>
-                                <IconButton
-                                  aria-label="Remove payout"
-                                  icon={<DeleteIcon />}
-                                  colorScheme="red"
-                                  size="sm"
-                                  isDisabled={values.payouts.length === 1}
-                                  onClick={() => remove(index)}
-                                />
-                              </Td>
-                            </Tr>
-                          ))}
-                        </Tbody>
-                      </Table>
+                                    <FormErrorMessage>
+                                      {(errors.payouts?.[index] as any)?.amount}
+                                    </FormErrorMessage>
+                                  </FormControl>
+                                </Td>
+                                <Td>
+                                  <FormControl isInvalid={
+                                    !!(errors.payouts?.[index] as any)?.budget && 
+                                    (touched.payouts?.[index] as any)?.budget
+                                  }>
+                                    <Field name={`payouts.${index}.budget`}>
+                                      {({ field, form }: FieldProps) => (
+                                        <NumberInput
+                                          {...field}
+                                          isValidCharacter={(val) => /^[0-9.-]$/.test(val)}
+                                          min={0}
+                                          precision={2}
+                                          step={1}
+                                          allowMouseWheel={false}
+                                          value={field.value === null || field.value === undefined ? '' : field.value}
+                                          onChange={(valueString) => {
+                                            // Remove any non-numeric characters except decimal point
+                                            valueString = valueString.replace(/[^0-9.]/g, '');
+                                            form.setFieldValue(
+                                              field.name,
+                                              valueString === '' ? 0 : Number(valueString)
+                                            );
+                                          }}
+                                        >
+                                          <NumberInputField 
+                                            placeholder="0.00" 
+                                            onFocus={(e) => e.target.select()}
+                                          />
+                                        </NumberInput>
+                                      )}
+                                    </Field>
+                                    <FormErrorMessage>
+                                      {(errors.payouts?.[index] as any)?.budget}
+                                    </FormErrorMessage>
+                                  </FormControl>
+                                </Td>
+                                {/* <Td>
+                                  <Field
+                                    as={Switch}
+                                    name={`payouts.${index}.autoStop`}
+                                    colorScheme="red"
+                                  />
+                                </Td> */}
+                                <Td display={{ base: "none", md: "table-cell" }}>
+                                  <Flex direction="row" alignItems="center" height="90px" width="100%" gap={3}>
+                                    {/* Toggle switch */}
+                                    <Box>
+                                      <Field name={`payouts.${index}.budgetAlert`}>
+                                        {({ field, form }: FieldProps) => (
+                                          <Switch
+                                            id={`payouts.${index}.budgetAlert`}
+                                            isChecked={field.value === true}
+                                            colorScheme="orange"
+                                            onChange={(e) => {
+                                              form.setFieldValue(`payouts.${index}.budgetAlert`, e.target.checked);
+                                              // If toggled off, clear the email field
+                                              if (!e.target.checked) {
+                                                form.setFieldValue(`payouts.${index}.budgetAlertEmail`, '');
+                                              }
+                                            }}
+                                          />
+                                        )}
+                                      </Field>
+                                    </Box>
+                                    
+                                    {/* Email input field */}
+                                    {/*values.payouts[index].budgetAlert && */ (
+                                      <FormControl 
+                                        isInvalid={
+                                          !!(errors.payouts?.[index] as any)?.budgetAlertEmail && 
+                                          (touched.payouts?.[index] as any)?.budgetAlertEmail
+                                        }
+                                        flex="1"
+                                      >
+                                        <Field
+                                          as={Input}
+                                          name={`payouts.${index}.budgetAlertEmail`}
+                                          placeholder="this.feature@wip.dev"
+                                          size="sm"
+                                        />
+                                        <FormErrorMessage mt={1} fontSize="xs">
+                                          {(errors.payouts?.[index] as any)?.budgetAlertEmail}
+                                        </FormErrorMessage>
+                                      </FormControl>
+                                    )}
+                                  </Flex>
+                                </Td>
+                                <Td>
+                                  <IconButton
+                                    aria-label="Remove payout"
+                                    icon={<DeleteIcon />}
+                                    colorScheme="red"
+                                    size="sm"
+                                    isDisabled={values.payouts.length === 1}
+                                    onClick={() => remove(index)}
+                                  />
+                                </Td>
+                              </Tr>
+                            ))}
+                          </Tbody>
+                        </Table>
 
-                      <Button
-                        leftIcon={<AddIcon />}
-                        colorScheme="brand"
-                        variant="outline"
-                        onClick={() =>
-                          push({
-                            countryId: 0,
-                            amount: 0,
-                            budget: 0,
-                            autoStop: false,
-                            budgetAlert: false,
-                            budgetAlertEmail: '',
-                          })
-                        }
-                        mb={8}
-                        borderColor={outlineBtnBorderColor}
-                        color={outlineBtnColor}
-                        _hover={{
-                          bg: outlineBtnHoverBg,
-                          borderColor: outlineBtnHoverBorderColor,
-                          color: outlineBtnHoverColor
-                        }}
-                      >
-                        Add Payout
-                      </Button>
+                        <Button
+                          leftIcon={<AddIcon />}
+                          colorScheme="brand"
+                          variant="outline"
+                          onClick={() =>
+                            push({
+                              countryId: 0,
+                              amount: 0,
+                              budget: 0,
+                              autoStop: false,
+                              budgetAlert: false,
+                              budgetAlertEmail: '',
+                            })
+                          }
+                          mb={8}
+                          borderColor={outlineBtnBorderColor}
+                          color={outlineBtnColor}
+                          _hover={{
+                            bg: outlineBtnHoverBg,
+                            borderColor: outlineBtnHoverBorderColor,
+                            color: outlineBtnHoverColor
+                          }}
+                        >
+                          Add Payout
+                        </Button>
+                      </Box>
                     </Box>
                   )}
                 </FieldArray>
