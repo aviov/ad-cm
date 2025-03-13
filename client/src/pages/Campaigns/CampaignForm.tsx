@@ -32,8 +32,9 @@ import {
   Text,
   Flex,
   useColorModeValue,
+  Tooltip,
 } from '@chakra-ui/react';
-import { AddIcon, DeleteIcon } from '@chakra-ui/icons';
+import { AddIcon, DeleteIcon, InfoIcon } from '@chakra-ui/icons';
 import { campaignApi, countryApi } from '../../services/api';
 import { CampaignFormData, Country } from '../../types';
 // import { formatNumber, formatEUR } from '../../utils/formatters';
@@ -50,9 +51,8 @@ const CampaignSchema = Yup.object().shape({
           .typeError('Amount must be a number')
           .required('Amount is required'),
         budget: Yup.number()
-          .nullable()
           .typeError('Budget must be a number')
-          .transform((value) => (isNaN(value) ? null : value)),
+          .required('Budget is required'),
         budgetAlertEmail: Yup.string()
           .email('Must be a valid email')
           .when('budgetAlert', {
@@ -73,7 +73,7 @@ const initialValues: CampaignFormData = {
     {
       countryId: undefined as unknown as number,
       amount: 0,
-      budget: null,
+      budget: 0,
       autoStop: false,
       budgetAlert: false,
       budgetAlertEmail: '',
@@ -287,8 +287,30 @@ const CampaignForm: React.FC = () => {
                         <Thead>
                           <Tr>
                             <Th>Country</Th>
-                            <Th>Amount</Th>
-                            <Th>Budget</Th>
+                            <Th>
+                              <Flex align="center">
+                                Amount
+                                <Tooltip 
+                                  label="The payout amount per conversion for this country" 
+                                  placement="top" 
+                                  hasArrow
+                                >
+                                  <InfoIcon ml={1} boxSize={3} color="gray.500" />
+                                </Tooltip>
+                              </Flex>
+                            </Th>
+                            <Th>
+                              <Flex align="center">
+                                Budget
+                                <Tooltip 
+                                  label="The maximum budget allocated for this country's campaign" 
+                                  placement="top" 
+                                  hasArrow
+                                >
+                                  <InfoIcon ml={1} boxSize={3} color="gray.500" />
+                                </Tooltip>
+                              </Flex>
+                            </Th>
                             {/* <Th>Auto Stop</Th> */}
                             <Th>Budget Alert</Th>
                             <Th>Actions</Th>
@@ -367,11 +389,11 @@ const CampaignForm: React.FC = () => {
                                           valueString = valueString.replace(/[^0-9.]/g, '');
                                           form.setFieldValue(
                                             field.name,
-                                            valueString === '' ? null : Number(valueString)
+                                            valueString === '' ? 0 : Number(valueString)
                                           );
                                         }}
                                       >
-                                        <NumberInputField placeholder="Optional" />
+                                        <NumberInputField placeholder="0.00" />
                                       </NumberInput>
                                     )}
                                   </Field>
@@ -446,7 +468,7 @@ const CampaignForm: React.FC = () => {
                                       <Field
                                         as={Input}
                                         name={`payouts.${index}.budgetAlertEmail`}
-                                        placeholder="Email for alerts"
+                                        placeholder="this.feature@wip.dev"
                                         size="sm"
                                       />
                                       <FormErrorMessage mt={1} fontSize="xs">
@@ -479,7 +501,7 @@ const CampaignForm: React.FC = () => {
                           push({
                             countryId: 0,
                             amount: 0,
-                            budget: null,
+                            budget: 0,
                             autoStop: false,
                             budgetAlert: false,
                             budgetAlertEmail: '',
