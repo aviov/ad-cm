@@ -125,16 +125,13 @@ S3_BUCKET=$(aws cloudformation describe-stacks --stack-name ad-cm-dev-frontend \
 # Sync the new build to S3
 aws s3 sync dist/ s3://$S3_BUCKET/ --delete
 
-# Get stack outputs to find the CloudFront domain name
+# Get stack outputs to find the CloudFront distribution ID
 aws cloudformation describe-stacks --stack-name ad-cm-dev-frontend --query "Stacks[0].Outputs" --output json
 
-# Get the CloudFront distribution ID
-DIST_ID=$(aws cloudformation describe-stacks --stack-name ad-cm-dev-frontend \
-  --query "Stacks[0].Outputs[?OutputKey=='DistributionId'].OutputValue" \
-  --output text)
+# In output look this: OutputKey": "DistributionId" and copy the value
 
 # Create an invalidation to clear the CloudFront cache
-aws cloudfront create-invalidation --distribution-id $DIST_ID --paths "/*"
+aws cloudfront create-invalidation --distribution-id <distribution-id> --paths "/*"
 ```
 
 ### 6. Updating existing deployments:
